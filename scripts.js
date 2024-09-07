@@ -31,6 +31,7 @@ document.getElementById("send").addEventListener("click", send)
 
 peer.on('open', function (id) {
     console.log('My peer ID is: ' + id);
+    document.getElementById("peerid").innerHTML = id;
 });
 
 peer.on('connection', function (conn) {
