@@ -19,6 +19,7 @@ function connect() {
     connection = conn
 }
 
+
 document.getElementById("connect").addEventListener("click", connect)
 
 function send() {
