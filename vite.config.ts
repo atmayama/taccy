@@ -21,7 +21,7 @@ export default defineConfig({
         v3_lazyRouteDiscovery: true,
       },
       ssr: false,
-      basename: "/",
+      basename: "/cards",
       buildEnd(args) {
         if (!args.viteConfig.isProduction) return;
 
