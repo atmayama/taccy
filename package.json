@@ -4,7 +4,7 @@
   "sideEffects": false,
   "type": "module",
   "scripts": {
-    "build": "remix vite:build && mv ./build/client ./docs",
+    "build": "remix vite:build && mv ./build/client/* ./docs/",
     "dev": "remix vite:dev",
     "preview": "vite preview",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
