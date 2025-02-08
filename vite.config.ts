@@ -11,7 +11,7 @@ declare module "@remix-run/node" {
 }
 
 export default defineConfig({
-  base: "/cards/",
+  base: "/taccy/",
   plugins: [
     remix({
       future: {
@@ -22,7 +22,7 @@ export default defineConfig({
         v3_lazyRouteDiscovery: true,
       },
       ssr: false,
-      basename: "/cards/",
+      basename: "/taccy/",
       buildEnd(args) {
         if (!args.viteConfig.isProduction) return;
 
