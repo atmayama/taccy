@@ -1,9 +1,26 @@
-import { ChangeEventHandler, useCallback, useEffect, useState } from "react";
+import {
+  ChangeEventHandler,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { PeerClient, PeerState, usePeerClient } from "./PeerClient";
 import {
   SinglePeerConnectionManager,
   useSinglePeerConnectionManager,
 } from "./SinglePeerConnectionManager";
+
+const winTrees = [
+  [0, 1, 2],
+  [3, 4, 5],
+  [6, 7, 8],
+  [0, 3, 6],
+  [1, 4, 7],
+  [2, 5, 8],
+  [0, 4, 8],
+  [2, 4, 6],
+];
 
 const App = () => {
   const { connection, join } = useSinglePeerConnectionManager();
@@ -72,19 +89,30 @@ const Game = () => {
   const [me, setMe] = useState<number>();
   const [gstate, setgState] = useState([0, 0, 0, 0, 0, 0, 0, 0, 0]);
   const [turn, setTurn] = useState(false);
-  const [won, setWon] = useState<boolean>();
+  const [won, setWon] = useState<boolean | null>();
+  const m = useRef<Record<number, Set<number>>>({
+    [-1]: new Set(),
+    1: new Set(),
+  });
 
   useEffect(() => {
     if (connection) {
       connection.on("data", (data: unknown) => {
-        const i = Number.parseInt(data as string);
-        setgState((prev) => {
-          const newState = [...prev];
-          newState[i] = me === -1 ? 1 : -1;
-          return newState;
-        });
-        setTurn(true);
-        check();
+        if (me) {
+          const i = Number.parseInt(data as string);
+          if (i == 9) {
+            reset(false);
+            return;
+          }
+          setgState((prev) => {
+            const newState = [...prev];
+            newState[i] = -me;
+            return newState;
+          });
+          m.current[-me]?.add(i);
+          setTurn(true);
+          check();
+        }
       });
       start();
     }
@@ -115,6 +143,7 @@ const Game = () => {
         return newState;
       });
       connection.send(i.toString());
+      m.current[me]?.add(i);
       setTurn(false);
       check();
     },
@@ -122,8 +151,37 @@ const Game = () => {
   );
 
   const check = useCallback(() => {
-    gstate;
+    if (m.current[-1].size < 3 && m.current[1].size < 3) return;
+    if (
+      winTrees.some((ss) => {
+        return ss.every((s) => m.current[-1].has(s));
+      })
+    ) {
+      setWon(me === -1);
+      return;
+    }
+
+    if (
+      winTrees.some((ss) => {
+        return ss.every((s) => m.current[1].has(s));
+      })
+    ) {
+      setWon(me === 1);
+      return;
+    }
+    if (m.current[-1].size + m.current[1].size === 9) setWon(null);
   }, [gstate]);
+
+  const reset = useCallback((push = true) => {
+    setWon(undefined);
+    setgState([0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    m.current = {
+      [-1]: new Set(),
+      1: new Set(),
+    };
+    start();
+    if (push) connection?.send(9);
+  }, []);
 
   if (!connection) return "Game connection not available";
   if (me == undefined) {
@@ -135,10 +193,15 @@ const Game = () => {
     //   </div>
     // );
   }
-  if (won != undefined) {
+  if (won !== undefined) {
     return (
       <div className="h-screen w-screen flex flex-col justify-center items-center">
-        {won ? "Congratulations!! You Won" : "Better luck next time"}
+        {won
+          ? "Congratulations!! You Won"
+          : won == null
+          ? "Its a Draw!"
+          : "Better luck next time"}
+        <button onClick={() => reset()}>Reset</button>
       </div>
     );
   }
@@ -177,6 +240,7 @@ const Game = () => {
     </div>
   );
 };
+
 export const TicTaccyToe = () => {
   return (
     <PeerClient>
